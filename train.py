@@ -29,7 +29,7 @@ def create_sp_graph(index_pairs, shape):
         (values, (index_pairs[:,0], index_pairs[:,1])),
         shape=shape
     )
-    norm_sp_graph = sp_graph > 0
+    norm_sp_graph = (sp_graph > 0)*1
     return norm_sp_graph
 
 
