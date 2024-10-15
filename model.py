@@ -31,3 +31,6 @@ class BPRMF(nn.Module):
         loss = -torch.log(torch.sigmoid(pos_score - neg_score))
         loss = torch.mean(loss)
         return loss
+    
+
+# https://github.com/yihong-chen/neural-collaborative-filtering/blob/master/src/mlp.py

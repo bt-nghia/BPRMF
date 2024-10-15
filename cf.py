@@ -34,7 +34,10 @@ def cosine(mat):
 
 
 cosine_sim_u = cosine(ui_train_graph).tocsr()
+cosine_sim_i = cosine(ui_train_graph.T).tocsr()
 
+
+# evaluate as user KNN
 recall_cnt = 0
 pre_cnt = 0
 non_pos_u = 0
@@ -61,4 +64,36 @@ for uid in range(0, nu):
 recall_cnt /= (nu-non_pos_u)
 pre_cnt /= (nu-non_pos_u)
 
+print("UserKNN")
+print("Recall@%i: %.4f, Precision@%i: %.4f" %(topk, recall_cnt, topk, pre_cnt))
+
+
+# evaluate as ItemKNN
+recall_cnt = 0
+pre_cnt = 0
+non_pos_u = 0
+
+for uid in range(0, nu):
+    gdu = ui_test_graph[uid].nonzero()[1]
+    if len(gdu) == 0:
+        non_pos_u+=1
+        continue
+    # print(gdu)
+    _, knn_uid_ids = torch.topk(torch.tensor(cosine_sim_u[uid].todense()), k=k+1)
+    knn_uid_ids = knn_uid_ids.squeeze()[1:]
+    knn_rating = ui_train_graph[knn_uid_ids]
+    # print(knn_uid_ids)
+    meanknn_rating = torch.tensor(knn_rating.mean(axis=0))
+    # print(meanknn_rating)
+    _, rec_item_ids = torch.topk(meanknn_rating, k=topk)
+    # print(gdu, rec_item_ids)
+    count = np.in1d(rec_item_ids, gdu).sum()
+    # print(count)
+    recall_cnt += count / len(gdu)
+    pre_cnt += count / topk
+
+recall_cnt /= (nu-non_pos_u)
+pre_cnt /= (nu-non_pos_u)
+
+print("ItemKNN")
 print("Recall@%i: %.4f, Precision@%i: %.4f" %(topk, recall_cnt, topk, pre_cnt))
