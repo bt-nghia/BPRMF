@@ -37,7 +37,7 @@ class UserItemData(Dataset):
     def __init__(self, nu, ni):
         self.nu = nu
         self.ni = ni
-        self.ui_pairs = pd.read_csv(f"user_item_train.csv", sep="\t", names=None).to_numpy()
+        self.ui_pairs = pd.read_csv(f"user_item_train.csv", sep="\t", names=None, header=None).to_numpy()
         self.ui_graph = create_sp_graph(self.ui_pairs, (nu, ni))
 
     def __getitem__(self, index):
@@ -56,10 +56,10 @@ class UserItemTestData(Dataset):
     def __init__(self, nu, ni):
         self.nu = nu
         self.ni = ni
-        self.ui_test_pairs = pd.read_csv(f"user_item_test.csv", sep="\t", names=None).to_numpy()
+        self.ui_test_pairs = pd.read_csv(f"user_item_test.csv", sep="\t", names=None, header=None).to_numpy()
         self.ui_graph_test = create_sp_graph(self.ui_test_pairs, (nu, ni))
 
-        self.ui_valid_pairs = pd.read_csv(f"user_item_valid.csv", sep="\t", names=None).to_numpy()
+        self.ui_valid_pairs = pd.read_csv(f"user_item_valid.csv", sep="\t", names=None, header=None).to_numpy()
         self.ui_graph_valid = create_sp_graph(self.ui_valid_pairs, (nu, ni))
 
     def __getitem__(self, index):
