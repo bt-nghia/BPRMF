@@ -25,22 +25,11 @@ norm_ui_graph = ui_train_graph - ui_train_graph / norm_weight
 # print("ui_train", norm_ui_graph)
 
 
-# print("ui_train_graph")
-# print(ui_train_graph.todense())
-
 def cosine(mat):
-    # print(mat.shape)
     ovl = mat @ mat.T #[u x u]
-    # print("ovl")
-    # print(ovl.todense())
-    # print(mat.todense())
-    # print((mat.multiply(mat)).todense())
     norm = np.sqrt((mat.multiply(mat)).sum(axis=1))
-    # print(norm)
     norm = norm * norm.T
-    # print(norm)
     cos_score = ovl / (norm + 1e-12)
-    # print(cos_score)
     return cos_score
 
 
