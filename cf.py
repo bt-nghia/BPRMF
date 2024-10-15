@@ -32,6 +32,14 @@ def cosine(mat):
     cos_score = ovl / (norm + 1e-12)
     return cos_score
 
+def pearson(mat):
+    norm_mat = mat - mat.mean(axis=1)
+    ovl = norm_mat @ norm_mat.T
+    norm = np.sqrt((norm_mat.multiply(norm_mat)).sum(axis=1))
+    norm = norm * norm.T
+    pearson_score = ovl / (norm + 1e-12)
+    return pearson_score
+
 
 cosine_sim_u = cosine(ui_train_graph).tocsr()
 cosine_sim_i = cosine(ui_train_graph.T).tocsr()
