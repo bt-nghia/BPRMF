@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import pandas as pd
 from torch import optim
-from model import BPRMF
+from model import BPRMF, NeuMF
 from scipy import sparse as sp
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
@@ -74,10 +74,15 @@ if __name__ == "__main__":
     np.random.seed(2024)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = BPRMF(
-        nu=conf["nu"],
-        ni=conf["ni"],
-        nd=conf["nd"]).to(device)
+    # model = BPRMF(
+    #     nu=conf["nu"],
+    #     ni=conf["ni"],
+    #     nd=conf["nd"]).to(device)
+
+    model = NeuMF(
+        num_users=conf["nu"],
+        num_items=conf["ni"],
+    )
     
     optimizer = optim.Adam(
         params=model.parameters(),
@@ -101,7 +106,7 @@ if __name__ == "__main__":
             # print(data)
             data = data.to(device)
             optimizer.zero_grad()
-            loss = model(data)
+            loss = model.loss_func(data)
             loss.backward()
             optimizer.step()
 
@@ -130,6 +135,7 @@ if __name__ == "__main__":
             for uids in valid_test_loader:
                 # ranking score
                 uids_score = model.pred(uids)
+                # print(uids_score.shape)
 
                 # evaluate
                 for topk in conf["topk"]:
@@ -161,6 +167,6 @@ if __name__ == "__main__":
 
 
 
-    score = model.pred(uids=torch.LongTensor([0, 1, 2, 3, 4, 5]))
-    x, y = torch.topk(score, axis=1, k=2)
-    # print(y)
+    # score = model.pred(uids=torch.LongTensor([0, 1, 2, 3, 4, 5]))
+    # x, y = torch.topk(score, axis=1, k=2)
+    # # print(y)
