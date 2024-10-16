@@ -193,8 +193,8 @@ class NeuMF(nn.Module):
         loss = loss.mean()
         return loss
     
+    @torch.no_grad
     def pred(self, users):
-        # print(users)
         score = []
         all_iids = torch.arange(0, self.ni)
         for uid in users:
