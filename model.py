@@ -205,3 +205,14 @@ class NeuMF(nn.Module):
             score.append(u_score)
         score = torch.tensor(score)
         return score
+    
+
+class Pop(nn.Module):
+    def __init__(self, ui_graph, nu, ni):
+        super().__init__()
+        self.ui_graph = ui_graph
+        self.pop_item = ui_graph.T.sum(axis = 0)
+
+    def pred(self, users):
+        # user: tensor([0, 1, 4, ....])
+        return torch.tensor(self.pop_item).expand(users.shape[1], -1)
