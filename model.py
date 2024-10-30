@@ -1,31 +1,61 @@
 import torch
 from torch import nn
+import scipy.sparse as sp
+import numpy as np
+import torch.nn.functional as F
+
+
+def laplace_transform(graph):
+    rowsum_sqrt = sp.diags(1/(np.sqrt(graph.sum(axis=1).A.ravel()) + 1e-8))
+    colsum_sqrt = sp.diags(1/(np.sqrt(graph.sum(axis=0).A.ravel()) + 1e-8))
+    graph = rowsum_sqrt @ graph @ colsum_sqrt
+
+    return graph
+
+
+def to_tensor(graph):
+    graph = graph.tocoo()
+    values = graph.data
+    indices = np.vstack((graph.row, graph.col))
+    graph = torch.sparse.FloatTensor(torch.LongTensor(indices), torch.FloatTensor(values), torch.Size(graph.shape))
+
+    return graph
 
 
 class BPRMF(nn.Module):
-    def __init__(self, nu, ni, nd):
+    def __init__(self, nu, ni, nd, ui_graph):
         super().__init__()
         self.nu = nu
         self.ni = ni
         self.nd = nd
+        self.ui_graph = ui_graph
         self.init_emb()
 
         self.n_layers = 2
         # MLP archi
-        self.u_layer = nn.Sequential([
+        self.u_layer = nn.Sequential(
             nn.Linear(nd, nd*2, bias=False),
             nn.ReLU(),
             nn.Linear(nd * 2, nd, bias=False),
-        ])
+        )
 
-        self.i_layer = nn.Sequential([
+        self.i_layer = nn.Sequential(
             nn.Linear(nd, nd*2, bias=False),
             nn.ReLU(),
             nn.Linear(nd * 2, nd, bias=False),
-        ])
+        )
 
+        self.create_graph()
         # LSTM archi
-        
+        # self.u_layer = nn.LSTMCell()
+        # self.i_layer = nn.LSTMCell()
+
+
+    def create_graph(self):
+        ui_propagate_graph = sp.bmat([[sp.csr_matrix((self.ui_graph.shape[0], self.ui_graph.shape[0])), self.ui_graph], 
+                                      [self.ui_graph.T, sp.csr_matrix((self.ui_graph.shape[1], self.ui_graph.shape[1]))]])
+        self.ui_propagate_graph = to_tensor(laplace_transform(ui_propagate_graph))
+
 
     def init_emb(self):
         self.user_emb = nn.Parameter(torch.FloatTensor(self.nu, self.nd))
@@ -36,6 +66,16 @@ class BPRMF(nn.Module):
     def propagate(self):
         u_feat = self.u_layer(self.user_emb)
         i_feat = self.i_layer(self.item_emb)
+
+        com_feat = torch.cat([u_feat, i_feat], dim=0)
+        feats = [com_feat]
+        for i in range(self.n_layers):
+            com_feat = self.ui_propagate_graph @ com_feat / (i+2)
+            feats.append(F.normalize(com_feat, p=2, dim=1))
+        
+        feats = torch.stack(feats, dim=1)
+        feats = torch.sum(feats, dim=1).squeeze(1)
+        u_feat, i_feat = torch.split(feats, [self.nu, self.ni], dim=0)
         return u_feat, i_feat
 
     @torch.no_grad

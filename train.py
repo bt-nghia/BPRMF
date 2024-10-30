@@ -74,20 +74,6 @@ if __name__ == "__main__":
     np.random.seed(2024)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # model = BPRMF(
-    #     nu=conf["nu"],
-    #     ni=conf["ni"],
-    #     nd=conf["nd"]).to(device)
-
-    model = NeuMF(
-        num_users=conf["nu"],
-        num_items=conf["ni"],
-    )
-    
-    optimizer = optim.Adam(
-        params=model.parameters(),
-        lr=conf["lr"])
-    
     ui_train_data = UserItemData(nu=conf["nu"], ni=conf["ni"])
     ui_valid_test_data = UserItemTestData(nu=conf["nu"], ni=conf["ni"])
     train_loader = DataLoader(ui_train_data, batch_size=conf["batch_size"], drop_last=False, shuffle=True)
@@ -98,7 +84,21 @@ if __name__ == "__main__":
     ui_valid_graph = ui_valid_test_data.ui_graph_valid.tocsr()
     ui_test_graph = ui_valid_test_data.ui_graph_test.tocsr()
 
+    model = BPRMF(
+        nu=conf["nu"],
+        ni=conf["ni"],
+        nd=conf["nd"],
+        ui_graph=ui_train_graph).to(device)
 
+    # model = NeuMF(
+    #     num_users=conf["nu"],
+    #     num_items=conf["ni"],
+    # )
+    
+    optimizer = optim.Adam(
+        params=model.parameters(),
+        lr=conf["lr"])
+    
     for epoch in range(0, conf["epoch"]):
         model.train()
         pbar = tqdm(train_loader)
