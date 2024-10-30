@@ -10,24 +10,49 @@ class BPRMF(nn.Module):
         self.nd = nd
         self.init_emb()
 
+        self.n_layers = 2
+        # MLP archi
+        self.u_layer = nn.Sequential([
+            nn.Linear(nd, nd*2, bias=False),
+            nn.ReLU(),
+            nn.Linear(nd * 2, nd, bias=False),
+        ])
+
+        self.i_layer = nn.Sequential([
+            nn.Linear(nd, nd*2, bias=False),
+            nn.ReLU(),
+            nn.Linear(nd * 2, nd, bias=False),
+        ])
+
+        # LSTM archi
+        
+
     def init_emb(self):
         self.user_emb = nn.Parameter(torch.FloatTensor(self.nu, self.nd))
         nn.init.xavier_normal_(self.user_emb)
         self.item_emb = nn.Parameter(torch.FloatTensor(self.ni, self.nd))
         nn.init.xavier_normal_(self.item_emb)
 
+    def propagate(self):
+        u_feat = self.u_layer(self.user_emb)
+        i_feat = self.i_layer(self.item_emb)
+        return u_feat, i_feat
+
     @torch.no_grad
     def pred(self, uids):
-        score = self.user_emb[uids] @ self.item_emb.T
+        u_feat, i_feat = self.propagate()
+        # score = self.user_emb[uids] @ self.item_emb.T
+        score = u_feat[uids] @ i_feat.T
         return score
 
     def forward(self, X):
         '''
         BPR loss
         '''
+        u_feat, i_feat = self.propagate()
         uids, piids, niids = X[:, 0], X[:, 1], X[:, 2]
-        pos_score = torch.sum(self.user_emb[uids] * self.item_emb[piids], axis=1)
-        neg_score = torch.sum(self.user_emb[uids] * self.item_emb[niids], axis=1)
+        pos_score = torch.sum(u_feat[uids] * i_feat[piids], axis=1)
+        neg_score = torch.sum(u_feat[uids] * i_feat[niids], axis=1)
         loss = -torch.log(torch.sigmoid(pos_score - neg_score))
         loss = torch.mean(loss)
         return loss
