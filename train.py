@@ -115,23 +115,24 @@ if __name__ == "__main__":
 
         if epoch % conf["n_log"] == 1:
             # init metrics
-            vrecall, trecall, vndcg, tndcg, vrscore, trscore, vnscore, tnscore = \
+            vrecall, trecall, vpre, tpre, vrscore, trscore, vprescore, tprescore = \
                 {}, {}, {}, {}, {}, {}, {}, {}
             for topk in conf["topk"]:
                 vrecall[topk] = []
                 trecall[topk] = []
-                vndcg[topk] = []
-                tndcg[topk] = []
+                vpre[topk] = []
+                tpre[topk] = []
+
                 vrscore[topk] = 0
+                tprescore[topk] = 0
                 trscore[topk] = 0
-                vnscore[topk] = 0
-                tnscore[topk] = 0
+                vprescore[topk] = 0
 
             # evaluation
             model.eval()
             # recall, ndcg log
             recall_satck = []
-            ndcg_stack = []
+            pre_stack = []
             for uids in valid_test_loader:
                 # ranking score
                 uids_score = model.pred(uids)
@@ -153,16 +154,24 @@ if __name__ == "__main__":
                     vrecall[topk].append(torch.tensor(vrecall_batch))
                     trecall[topk].append(torch.tensor(trecall_batch))
                     #ndcg_minibatch
+                    vpre_batch = valid_is_hit.sum(axis=1) / topk
+                    tpre_batch = test_is_hit.sum(axis=1) / topk
+                    vpre[topk].append(torch.tensor(vpre_batch))
+                    tpre[topk].append(torch.tensor(tpre_batch))
 
             # combine all batch score
             for topk in conf["topk"]:
-                vrscore[topk] = torch.stack(vrecall[topk], dim=1).sum() / \
-                    (conf["nu"] - (ui_test_graph.sum(axis=1) == 0).sum())
-                trscore[topk] = torch.stack(trecall[topk], dim=1).sum() / \
+                vrscore[topk] = torch.cat(vrecall[topk], dim=1).sum() / \
                     (conf["nu"] - (ui_valid_graph.sum(axis=1) == 0).sum())
-                # vn_score = torch.stack(vndcg[topk], dim=0)
-                # tn_score = torch.stack(tndcg[topk], dim=0)
+                trscore[topk] = torch.cat(trecall[topk], dim=1).sum() / \
+                    (conf["nu"] - (ui_test_graph.sum(axis=1) == 0).sum())
+                
+                vprescore[topk] = torch.cat(vpre[topk], dim=1).sum() / \
+                    (conf["nu"] - (ui_valid_graph.sum(axis=1) == 0).sum())
+                tprescore[topk] = torch.cat(tpre[topk], dim=1).sum() / \
+                    (conf["nu"] - (ui_test_graph.sum(axis=1) == 0).sum())
                 print("topk: %i, recall_V: %.4f, recall_T: %.4f" %(topk, vrscore[topk], trscore[topk]))
+                print("topk: %i, pre_V: %.4f, pre_T: %.4f" %(topk, vprescore[topk], tprescore[topk]))
 
 
 
