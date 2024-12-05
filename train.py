@@ -17,7 +17,7 @@ conf = {
     "epoch": 200,
     "lr": 1e-3,
     "n_log": 5,
-    "batch_size": 2,
+    "batch_size": 4096,
     "topk": [2, 3, 5],
 }
 

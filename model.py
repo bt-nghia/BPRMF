@@ -50,6 +50,8 @@ class BPRMF(nn.Module):
         # self.u_layer = nn.LSTMCell()
         # self.i_layer = nn.LSTMCell()
 
+        # self.u_lstm = nn.LSTMCell()
+
 
     def create_graph(self):
         ui_propagate_graph = sp.bmat([[sp.csr_matrix((self.ui_graph.shape[0], self.ui_graph.shape[0])), self.ui_graph], 
