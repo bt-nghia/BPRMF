@@ -56,7 +56,7 @@ class BPRMF(nn.Module):
     def create_graph(self):
         ui_propagate_graph = sp.bmat([[sp.csr_matrix((self.ui_graph.shape[0], self.ui_graph.shape[0])), self.ui_graph], 
                                       [self.ui_graph.T, sp.csr_matrix((self.ui_graph.shape[1], self.ui_graph.shape[1]))]])
-        self.ui_propagate_graph = to_tensor(laplace_transform(ui_propagate_graph))
+        self.ui_propagate_graph = to_tensor(laplace_transform(ui_propagate_graph)).to("cuda")
 
 
     def init_emb(self):
