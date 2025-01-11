@@ -3,6 +3,8 @@ from torch import nn
 import scipy.sparse as sp
 import numpy as np
 import torch.nn.functional as F
+from torch_geometric.nn.conv import GATv2Conv, SAGEConv
+from torch_geometric.nn.models import GraphSAGE, PMLP, GAT
 
 
 def laplace_transform(graph):
@@ -47,12 +49,36 @@ class BPRMF(nn.Module):
             nn.Linear(nd * 2, nd, bias=False),
         )
 
-        self.create_graph()
-        # LSTM archi
-        # self.u_layer = nn.LSTMCell()
-        # self.i_layer = nn.LSTMCell()
+        # self.create_graph()
+        # print(ui_graph.tocoo().row, ui_graph.tocoo().col)
+        # exit()
+        ui_dense = ui_graph.tocoo()
+        user_index = ui_dense.row
+        item_index = ui_dense.col + self.nu
 
-        # self.u_lstm = nn.LSTMCell()
+        # print(item_index.max())
+        # print(user_index)
+        # print(item_index)
+        # print(user_index.shape)
+        # print(item_index.shape)
+        # exit()
+
+        src_ids = np.concatenate((user_index, item_index), axis=0)
+        trg_ids = np.concatenate((item_index, user_index), axis=0)
+
+        self.edge_index = torch.tensor([src_ids, trg_ids]).to(self.device)
+        # print(self.edge_index.shape)
+        # print(user_index.max())
+        # print(item_index.max())
+        # print(len(user_index))
+        # print(len(item_index))
+        # print(user_index)
+        # print(item_index)
+        # print(user_index + item_index)
+        # exit()
+        self.GAT_model = GAT(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
+        self.PMLP_model = PMLP(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
+        self.GraphSage_model = GraphSAGE(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
 
 
     def create_graph(self):
@@ -68,18 +94,24 @@ class BPRMF(nn.Module):
         nn.init.xavier_normal_(self.item_emb)
 
     def propagate(self):
-        u_feat = self.u_layer(self.user_emb)
-        i_feat = self.i_layer(self.item_emb)
+        # u_feat = self.u_layer(self.user_emb)
+        # i_feat = self.i_layer(self.item_emb)
 
-        com_feat = torch.cat([u_feat, i_feat], dim=0)
-        feats = [com_feat]
-        for i in range(self.n_layers):
-            com_feat = self.ui_propagate_graph @ com_feat / (i+2)
-            feats.append(F.normalize(com_feat, p=2, dim=1))
+        # com_feat = torch.cat([u_feat, i_feat], dim=0)
+        # feats = [com_feat]
+        # for i in range(self.n_layers):
+        #     com_feat = self.ui_propagate_graph @ com_feat / (i+2)
+        #     feats.append(F.normalize(com_feat, p=2, dim=1))
         
-        feats = torch.stack(feats, dim=1)
-        feats = torch.sum(feats, dim=1).squeeze(1)
-        u_feat, i_feat = torch.split(feats, [self.nu, self.ni], dim=0)
+        # feats = torch.stack(feats, dim=1)
+        # feats = torch.sum(feats, dim=1).squeeze(1)
+        # u_feat, i_feat = torch.split(feats, [self.nu, self.ni], dim=0)
+        feats = torch.cat([self.user_emb, self.item_emb], dim=0)
+        out_feats = self.GAT_model(feats, self.edge_index)
+        # out_feats = self.PMLP_model(feats, self.edge_index)
+        # out_feats = self.GraphSage_model(feats, self.edge_index)
+
+        u_feat, i_feat = torch.split(out_feats, self.user_emb.shape[0])
         return u_feat, i_feat
 
     @torch.no_grad
