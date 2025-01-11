@@ -21,6 +21,12 @@ conf = {
     "topk": [20, 30, 50],
 }
 
+def read_csv(path):
+    data = pd.read_csv(path, sep=",")
+    interaction = data[["user_id", "item_id"]]
+    interaction = interaction.to_numpy()
+    return interaction
+
 
 def create_sp_graph(index_pairs, shape):
     assert index_pairs.shape[1] == 2
@@ -37,7 +43,8 @@ class UserItemData(Dataset):
     def __init__(self, nu, ni):
         self.nu = nu
         self.ni = ni
-        self.ui_pairs = pd.read_csv(f"ml-1m/user_item_train.csv", sep="\t", names=None, header=None).to_numpy()
+        # self.ui_pairs = pd.read_csv(f"ml-1m/user_item_train.csv", sep="\t", names=None, header=None).to_numpy()
+        self.ui_pairs = read_csv("ml-1m/train 1.csv")
         self.ui_graph = create_sp_graph(self.ui_pairs, (nu, ni))
 
     def __getitem__(self, index):
@@ -56,10 +63,12 @@ class UserItemTestData(Dataset):
     def __init__(self, nu, ni):
         self.nu = nu
         self.ni = ni
-        self.ui_test_pairs = pd.read_csv(f"ml-1m/user_item_test.csv", sep="\t", names=None, header=None).to_numpy()
+        # self.ui_test_pairs = pd.read_csv(f"ml-1m/user_item_test.csv", sep="\t", names=None, header=None).to_numpy()
+        self.ui_test_pairs = read_csv("ml-1m/test 1.csv")
         self.ui_graph_test = create_sp_graph(self.ui_test_pairs, (nu, ni))
 
-        self.ui_valid_pairs = pd.read_csv(f"ml-1m/user_item_valid.csv", sep="\t", names=None, header=None).to_numpy()
+        # self.ui_valid_pairs = pd.read_csv(f"ml-1m/user_item_valid.csv", sep="\t", names=None, header=None).to_numpy()
+        self.ui_valid_pairs = read_csv("ml-1m/valid 1.csv")
         self.ui_graph_valid = create_sp_graph(self.ui_valid_pairs, (nu, ni))
 
     def __getitem__(self, index):

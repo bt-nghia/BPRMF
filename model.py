@@ -31,6 +31,8 @@ class BPRMF(nn.Module):
         self.ui_graph = ui_graph
         self.init_emb()
 
+        self.device = "cpu"
+
         self.n_layers = 2
         # MLP archi
         self.u_layer = nn.Sequential(
@@ -56,7 +58,7 @@ class BPRMF(nn.Module):
     def create_graph(self):
         ui_propagate_graph = sp.bmat([[sp.csr_matrix((self.ui_graph.shape[0], self.ui_graph.shape[0])), self.ui_graph], 
                                       [self.ui_graph.T, sp.csr_matrix((self.ui_graph.shape[1], self.ui_graph.shape[1]))]])
-        self.ui_propagate_graph = to_tensor(laplace_transform(ui_propagate_graph)).to("cuda")
+        self.ui_propagate_graph = to_tensor(laplace_transform(ui_propagate_graph)).to(self.device)
 
 
     def init_emb(self):
