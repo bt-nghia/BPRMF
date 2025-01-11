@@ -66,7 +66,7 @@ class BPRMF(nn.Module):
         src_ids = np.concatenate((user_index, item_index), axis=0)
         trg_ids = np.concatenate((item_index, user_index), axis=0)
 
-        self.edge_index = torch.tensor([src_ids, trg_ids]).to(self.device)
+        self.edge_index = torch.LongTensor([src_ids, trg_ids]).to(self.device)
         # print(self.edge_index.shape)
         # print(user_index.max())
         # print(item_index.max())
@@ -106,6 +106,7 @@ class BPRMF(nn.Module):
         # feats = torch.stack(feats, dim=1)
         # feats = torch.sum(feats, dim=1).squeeze(1)
         # u_feat, i_feat = torch.split(feats, [self.nu, self.ni], dim=0)
+
         feats = torch.cat([self.user_emb, self.item_emb], dim=0)
         out_feats = self.GAT_model(feats, self.edge_index)
         # out_feats = self.PMLP_model(feats, self.edge_index)
