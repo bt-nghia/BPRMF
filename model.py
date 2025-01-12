@@ -33,7 +33,7 @@ class BPRMF(nn.Module):
         self.ui_graph = ui_graph
         self.init_emb()
 
-        self.device = "cpu"
+        self.device = "cuda"
 
         self.n_layers = 2
         # MLP archi
