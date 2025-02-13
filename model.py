@@ -146,8 +146,8 @@ class BPRMF(nn.Module):
         u_feat, i_feat = self.propagate()
         uids, piids, niids = X[:, 0], X[:, 1], X[:, 2]
 
-        i_c_loss = self.cal_c_loss(i_feat[piids])
-        u_c_loss = self.cal_c_loss(u_feat[uids])
+        i_c_loss = self.cal_c_loss(i_feat[piids], i_feat[piids])
+        u_c_loss = self.cal_c_loss(u_feat[uids], u_feat[uids])
 
         pos_score = torch.sum(u_feat[uids] * i_feat[piids], axis=1)
         neg_score = torch.sum(u_feat[uids] * i_feat[niids], axis=1)
