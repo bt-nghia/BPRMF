@@ -117,6 +117,20 @@ class BPRMF(nn.Module):
 
         u_feat, i_feat = torch.split(out_feats, self.user_emb.shape[0])
         return u_feat, i_feat
+    
+    def cal_c_loss(self, pos, aug):
+
+        pos = F.normalize(pos, p=2, dim=1)
+        aug = F.normalize(aug, p=2, dim=1)
+        pos_score = torch.sum(pos * aug, dim=1) # [batch_size]
+        ttl_score = torch.matmul(pos, aug.permute(1, 0)) # [batch_size, batch_size]
+
+        pos_score = torch.exp(pos_score / self.c_temp) # [batch_size]
+        ttl_score = torch.sum(torch.exp(ttl_score / self.c_temp), axis=1) # [batch_size]
+
+        c_loss = - torch.mean(torch.log(pos_score / ttl_score))
+
+        return c_loss
 
     @torch.no_grad
     def pred(self, uids):
@@ -131,10 +145,16 @@ class BPRMF(nn.Module):
         '''
         u_feat, i_feat = self.propagate()
         uids, piids, niids = X[:, 0], X[:, 1], X[:, 2]
+
+        i_c_loss = self.cal_c_loss(i_feat[piids])
+        u_c_loss = self.cal_c_loss(u_feat[uids])
+
         pos_score = torch.sum(u_feat[uids] * i_feat[piids], axis=1)
         neg_score = torch.sum(u_feat[uids] * i_feat[niids], axis=1)
         loss = -torch.log(torch.sigmoid(pos_score - neg_score))
         loss = torch.mean(loss)
+
+        loss = (loss + u_c_loss + i_c_loss) / 3
         return loss
     
     def loss_func(self, X):
