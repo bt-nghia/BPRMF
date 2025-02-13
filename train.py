@@ -79,27 +79,6 @@ class UserItemTestData(Dataset):
 
 
 if __name__ == "__main__":
-
-    """
-    ConRec
-    """
-    uids = np.load("vnm_sbert_4_uids.npy", allow_pickle=True)
-    iids = np.load("vnm_sbert_4_iids.npy", allow_pickle=True)
-
-    u_feat = torch.load("u_feat.npy", map_location="cpu")
-    i_feat = torch.load("i_feat.npy", map_location="cpu")
-
-    uids = torch.tensor(uids, dtype=int).reshape(-1, 1).expand(250, 50).flatten()
-    iids = torch.tensor(iids, dtype=int).flatten()
-    vals = np.ones_like(uids) * 6
-
-    con_rec_mat = sp.coo_matrix(
-        (vals, (uids, iids)), shape=(conf["nu"], conf["ni"])
-    ).tocsr()
-
-    # print(uids)
-    # exit()
-
     torch.manual_seed(2024)
     np.random.seed(2024)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -114,33 +93,33 @@ if __name__ == "__main__":
     ui_valid_graph = ui_valid_test_data.ui_graph_valid.tocsr()
     ui_test_graph = ui_valid_test_data.ui_graph_test.tocsr()
 
-    # model = BPRMF(
-    #     nu=conf["nu"],
-    #     ni=conf["ni"],
-    #     nd=conf["nd"],
-    #     ui_graph=ui_train_graph).to(device)
+    model = BPRMF(
+        nu=conf["nu"],
+        ni=conf["ni"],
+        nd=conf["nd"],
+        ui_graph=ui_train_graph).to(device)
 
     # model = NeuMF(
     #     num_users=conf["nu"],
     #     num_items=conf["ni"],
     # )
     
-    # optimizer = optim.Adam(
-    #     params=model.parameters(),
-    #     lr=conf["lr"])
+    optimizer = optim.Adam(
+        params=model.parameters(),
+        lr=conf["lr"])
     
     for epoch in range(0, conf["epoch"]):
-        # model.train()
-        # pbar = tqdm(train_loader)
-        # for iter, data in enumerate(pbar):
-        #     # print(data)
-        #     data = data.to(device)
-        #     optimizer.zero_grad()
-        #     loss = model.loss_func(data)
-        #     loss.backward()
-        #     optimizer.step()
+        model.train()
+        pbar = tqdm(train_loader)
+        for iter, data in enumerate(pbar):
+            # print(data)
+            data = data.to(device)
+            optimizer.zero_grad()
+            loss = model.loss_func(data)
+            loss.backward()
+            optimizer.step()
 
-        #     pbar.set_description("epoch: %i, loss: %.4f" %(epoch, loss.detach()))
+            pbar.set_description("epoch: %i, loss: %.4f" %(epoch, loss.detach()))
 
 
         if 1 == 1:
@@ -159,18 +138,18 @@ if __name__ == "__main__":
                 vprescore[topk] = 0
 
             # evaluation
-            # model.eval()
+            model.eval()
             # recall, ndcg log
             recall_satck = []
             pre_stack = []
             for uids in valid_test_loader:
                 # ranking score
-                # uids_score = model.pred(uids).to("cpu")
+                uids_score = model.pred(uids).to("cpu")
                 # print(uids_score.shape)
 
-                rec_score = u_feat[uids] @ i_feat.T 
-                con_score = con_rec_mat[uids].todense()
-                uids_score = torch.tensor(rec_score) + torch.tensor(con_score)
+                # rec_score = u_feat[uids] @ i_feat.T 
+                # con_score = con_rec_mat[uids].todense()
+                # uids_score = torch.tensor(rec_score) + torch.tensor(con_score)
 
                 # evaluate
                 for topk in conf["topk"]:
@@ -209,7 +188,7 @@ if __name__ == "__main__":
                 print("topk: %i, recall_V: %.4f, recall_T: %.4f" %(topk, vrscore[topk], trscore[topk]))
                 print("topk: %i, pre_V: %.4f, pre_T: %.4f" %(topk, vprescore[topk], tprescore[topk]))
 
-        exit()
+        # exit()
 
 
     # score = model.pred(uids=torch.LongTensor([0, 1, 2, 3, 4, 5]))

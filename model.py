@@ -4,7 +4,7 @@ import scipy.sparse as sp
 import numpy as np
 import torch.nn.functional as F
 from torch_geometric.nn.conv import GATv2Conv, SAGEConv
-from torch_geometric.nn.models import GraphSAGE, PMLP, GAT
+from torch_geometric.nn.models import GraphSAGE, PMLP, GAT, LINKX, EdgeCNN
 
 
 def laplace_transform(graph):
@@ -76,10 +76,11 @@ class BPRMF(nn.Module):
         # print(item_index)
         # print(user_index + item_index)
         # exit()
-        self.GAT_model = GAT(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
-        self.PMLP_model = PMLP(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
-        self.GraphSage_model = GraphSAGE(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
-
+        # self.GAT_model = GAT(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
+        # self.PMLP_model = PMLP(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
+        # self.GraphSage_model = GraphSAGE(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
+        self.LinkX_model = LINKX(self.nu + self.ni, self.nd, self.nd, self.nd, self.n_layers)
+        self.edgecnn_model = EdgeCNN(in_channels=self.nd, hidden_channels=self.nd * 2, num_layers=self.n_layers, out_channels=self.nd, dropout=0.1)
 
     def create_graph(self):
         ui_propagate_graph = sp.bmat([[sp.csr_matrix((self.ui_graph.shape[0], self.ui_graph.shape[0])), self.ui_graph], 
@@ -108,9 +109,11 @@ class BPRMF(nn.Module):
         # u_feat, i_feat = torch.split(feats, [self.nu, self.ni], dim=0)
 
         feats = torch.cat([self.user_emb, self.item_emb], dim=0)
-        out_feats = self.GAT_model(feats, self.edge_index)
+        # out_feats = self.GAT_model(feats, self.edge_index)
         # out_feats = self.PMLP_model(feats, self.edge_index)
         # out_feats = self.GraphSage_model(feats, self.edge_index)
+        # out_feats = self.LinkX_model(feats, self.edge_index)
+        out_feats = self.edgecnn_model(feats, self.edge_index)
 
         u_feat, i_feat = torch.split(out_feats, self.user_emb.shape[0])
         return u_feat, i_feat
