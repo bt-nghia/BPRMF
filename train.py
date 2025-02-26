@@ -14,7 +14,7 @@ conf = {
     "nu": 6041,
     "ni": 3953,
     "nd": 16,
-    "epoch": 1,
+    "epoch": 100,
     "lr": 1e-3,
     "n_log": 5,
     "batch_size": 4096,
