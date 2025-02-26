@@ -14,7 +14,7 @@ conf = {
     "nu": 6041,
     "ni": 3953,
     "nd": 16,
-    "epoch": 200,
+    "epoch": 1,
     "lr": 1e-3,
     "n_log": 5,
     "batch_size": 4096,
@@ -103,6 +103,9 @@ if __name__ == "__main__":
     #     num_users=conf["nu"],
     #     num_items=conf["ni"],
     # )
+
+    torch.save(model, "weight.pth")
+
     
     optimizer = optim.Adam(
         params=model.parameters(),
@@ -151,6 +154,8 @@ if __name__ == "__main__":
                 # con_score = con_rec_mat[uids].todense()
                 # uids_score = torch.tensor(rec_score) + torch.tensor(con_score)
 
+                # uids_score += con_score
+
                 # evaluate
                 for topk in conf["topk"]:
                     mask_score = ui_train_graph[uids] * (-INF)
@@ -187,7 +192,8 @@ if __name__ == "__main__":
                     (conf["nu"] - (ui_test_graph.sum(axis=1) == 0).sum())
                 print("topk: %i, recall_V: %.4f, recall_T: %.4f" %(topk, vrscore[topk], trscore[topk]))
                 print("topk: %i, pre_V: %.4f, pre_T: %.4f" %(topk, vprescore[topk], tprescore[topk]))
-
+    
+    torch.save(model, "weight.pth")
         # exit()
 
 

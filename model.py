@@ -33,7 +33,8 @@ class BPRMF(nn.Module):
         self.ui_graph = ui_graph
         self.init_emb()
 
-        self.device = "cuda"
+        # self.device = "cuda"
+        self.device = "cpu"
 
         self.n_layers = 2
         # MLP archi
@@ -48,6 +49,8 @@ class BPRMF(nn.Module):
             nn.ReLU(),
             nn.Linear(nd * 2, nd, bias=False),
         )
+
+        self.c_temp = 0.005
 
         # self.create_graph()
         # print(ui_graph.tocoo().row, ui_graph.tocoo().col)
@@ -146,15 +149,15 @@ class BPRMF(nn.Module):
         u_feat, i_feat = self.propagate()
         uids, piids, niids = X[:, 0], X[:, 1], X[:, 2]
 
-        i_c_loss = self.cal_c_loss(i_feat[piids], i_feat[piids])
-        u_c_loss = self.cal_c_loss(u_feat[uids], u_feat[uids])
+        # i_c_loss = self.cal_c_loss(i_feat[piids], i_feat[piids])
+        # u_c_loss = self.cal_c_loss(u_feat[uids], u_feat[uids])
 
         pos_score = torch.sum(u_feat[uids] * i_feat[piids], axis=1)
         neg_score = torch.sum(u_feat[uids] * i_feat[niids], axis=1)
         loss = -torch.log(torch.sigmoid(pos_score - neg_score))
         loss = torch.mean(loss)
 
-        loss = (loss + u_c_loss + i_c_loss) / 3
+        # loss = (loss + u_c_loss + i_c_loss) / 3
         return loss
     
     def loss_func(self, X):
