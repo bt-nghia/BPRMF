@@ -12,7 +12,7 @@ score = model.pred(uids)
 ranking_score, rec_ids = torch.topk(score, k=topk, dim=1)
 print(rec_ids)
 
-movies = pd.read_csv("ml-1m/movies.dat", sep="::", encoding = "ISO-8859-1", names=["id", "name", "cates"])
+movies = pd.read_csv("ml-1m/movies.dat", sep="::", encoding = "latin-1", names=["id", "name", "cates"])
 # print(movies[movies["id"] == 1])
 movies = movies[["id", "name"]]
 
